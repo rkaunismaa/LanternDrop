@@ -77,3 +77,6 @@ A running, step-by-step record of everything done in the Claude Code terminal se
 - Swept 4 configs. The danger timer barely matters; the drop weights do.
 - Chose weights 2,3,3,3,3 with the danger timer kept at 2 s. Confirmed on 40 fresh-seed runs: careful 171 drops (about 2:50), random 92 (54%), random score 30%.
 - Wrote `docs/balance-log.md`, and updated `docs/design.md` and the AI log.
+
+### 13. "1" (merge and push)
+- Merged `balance` into `main` (49/49 passing on `main`), deleted the branch, and pushed `main` to GitHub.
