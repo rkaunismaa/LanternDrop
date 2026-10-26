@@ -8,6 +8,7 @@ var main: Node2D
 func before_each() -> void:
 	main = MainScene.instantiate()
 	main.best_path = "user://test_best_scene_%d.cfg" % randi()
+	main.settings_path = "user://test_settings_scene_%d.cfg" % randi()
 	add_child_autofree(main)
 	main.start(5)
 
@@ -15,6 +16,7 @@ func before_each() -> void:
 func after_each() -> void:
 	Engine.time_scale = 1.0
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(main.best_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(main.settings_path))
 
 
 func test_starts_empty_with_a_preview() -> void:
@@ -130,3 +132,54 @@ func test_missing_art_falls_back_to_the_drawn_sky() -> void:
 	main.art_dir = "res://no_art/"
 	main.apply_art()
 	assert_false(main.get_node("%Backdrop").visible)
+
+
+
+# --- sound effects ---
+
+func test_drop_plays_a_sound() -> void:
+	main.drop_at(360.0)
+	assert_has(main.sfx.history, "drop")
+
+
+func test_merge_plays_the_chime_for_the_new_kind() -> void:
+	var y: float = main.JAR_FLOOR - 40.0
+	main.spawn_lantern(3, Vector2(330, y))
+	main.spawn_lantern(3, Vector2(330 + 2 * LanternKinds.radius(3) - 2, y))
+	await wait_until(func() -> bool: return main.sfx.history.has("merge_4"), 3.0)
+	assert_has(main.sfx.history, "merge_4")
+
+
+func test_two_suns_play_the_sun_sound() -> void:
+	var r := LanternKinds.radius(11)
+	main.spawn_lantern(11, Vector2(360, main.JAR_FLOOR - r))
+	main.spawn_lantern(11, Vector2(360, main.JAR_FLOOR - 3 * r + 2))
+	await wait_until(func() -> bool: return main.sfx.history.has("sun"), 3.0)
+	assert_has(main.sfx.history, "sun")
+
+
+func test_landing_makes_a_sound() -> void:
+	var l: Lantern = main.spawn_lantern(5, Vector2(360, main.JAR_FLOOR - 300))
+	await wait_until(func() -> bool: return main.sfx.history.has("land"), 3.0)
+	assert_has(main.sfx.history, "land")
+
+
+func test_game_over_and_danger_sounds() -> void:
+	Engine.time_scale = 4.0
+	var l: Lantern = main.spawn_lantern(5, Vector2(360, main.DANGER_Y - 60))
+	l.freeze = true
+	l.age = 5.0
+	await wait_until(func() -> bool: return main.is_over, 3.0)
+	assert_has(main.sfx.history, "danger", "a warning pulse before the end")
+	assert_has(main.sfx.history, "game_over")
+
+
+func test_m_key_toggles_mute() -> void:
+	var press := InputEventKey.new()
+	press.physical_keycode = KEY_M
+	press.pressed = true
+	main._unhandled_input(press)
+	assert_true(main.sfx.muted)
+	assert_string_contains(main.get_node("%SoundToggle").text, "off")
+	main._unhandled_input(press)
+	assert_false(main.sfx.muted)

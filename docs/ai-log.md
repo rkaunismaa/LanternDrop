@@ -14,3 +14,14 @@ Short notes on what the agent did, what was fixed by hand, and rough time spent.
   - GDScript type-inference errors in tests;
   - the first backdrop had big lanterns floating in the sky, which competed with the gameplay lanterns, so it was regenerated without them.
 - Fixed by hand: nothing. Time: about 1 hour.
+
+## 2026-10-26 - Sound effects
+- Agent: proposed sounds generated in code (no files to license) and got the go-ahead. Built test-first on the branch `sound`:
+  - `SoundBank` synthesizes drop, landing, 11 pentatonic merge chimes, the Sun arpeggio, the danger pulse and the game-over phrase as 16-bit WAVs in memory;
+  - `Sfx` is an 8-voice player with a mute that is saved between sessions;
+  - main-scene hooks, plus the M key and a Sound button.
+
+  12 new tests, 38 in total.
+- What went wrong and was fixed by the agent: the landing sound never played. The agent measured instead of guessing: the touch signal fires after the collision is resolved, so the speed read 34 instead of the 686 just before impact. Each lantern now remembers its speed from before the physics step.
+- Limit: the agent can't hear the sounds. It checked they're generated, triggered, audible and unclipped, but the user needs to judge how they sound.
+- Fixed by hand: nothing. Time: about 30 minutes.

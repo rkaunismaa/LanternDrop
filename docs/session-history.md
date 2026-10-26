@@ -45,3 +45,14 @@ A running, step-by-step record of everything done in the Claude Code terminal se
 
 ### 6. "what is the objective of the game?"
 - The agent explained the goal: score as many points as you can before the jar overflows, by merging lanterns into bigger kinds, aiming for the Sun and beating your best score.
+
+### 7. "add sound effects"
+- The agent proposed a small plan in chat (sounds generated in code, no audio files, a mute key) and asked for the go-ahead.
+
+### 8. "go ahead"
+- Branch `sound`. Wrote failing tests first:
+  - 6 for `SoundBank` and `Sfx`: every sound exists; sounds are short, audible and unclipped; merge chimes climb a scale from middle C to two octaves up; mute works and is saved; unknown sounds are ignored;
+  - 6 for the scene: drop, merge chime for the new kind, two Suns, landing, the danger pulse then game over, and the M key.
+- Implemented `game/scripts/audio/sound_bank.gd` (all sounds synthesized as 16-bit WAVs in memory), `game/scenes/sfx.gd` (8 voices, mute saved in `user://settings.cfg`), the hooks in `main.gd`, and a "Sound: on/off (M)" button that never takes keyboard focus.
+- The landing test failed. A debug run measured the lantern's speed at the touch signal (34) against just before impact (686): the signal fires after the collision is resolved. Fixed by having each lantern store its speed before the physics step. 38/38 passing, and stable on repeat runs.
+- Updated `docs/design.md` (a sound section), `README.md` (the M key) and the AI log.

@@ -47,10 +47,20 @@ Drop glowing paper lanterns into a glass jar at night. Two lanterns of the same 
 - On a merge: a quick pop in scale, a burst of sparks, a small screen shake, and a "+points" pop-up.
 - Art: the lanterns are drawn in code, which keeps every kind crisp and consistent. The night backdrop (a lake under a starry violet sky) was painted with SDXL on the local ComfyUI (`tools/comfyui/`, recorded in `game/art/provenance.json`). If it's missing, a drawn starry sky shows instead.
 
+## Sound
+All sounds are generated in code at startup (`game/scripts/audio/sound_bank.gd`). There are no audio files to license.
+- **Drop:** a soft falling "plip".
+- **Landing:** a wooden "tok", louder for harder hits and deeper for bigger lanterns.
+- **Merge:** a bell chime whose pitch climbs a pentatonic scale with each kind, from middle C up two octaves to the Sun.
+- **Two Suns:** a rising arpeggio.
+- **Danger:** a low pulse that speeds up and gets louder as the jar nears overflowing.
+- **Game over:** a falling three-note phrase.
+
+Press M, or click "Sound", to mute. The choice is saved.
+
 ## Tech
 - Godot 4.7 with typed GDScript, and GUT tests run headless (`tools/run-tests.sh`).
 - Rules (kinds, spawning, merging, scoring, the danger timer, best score) live in plain scripts under `game/scripts/rules/`. Physics and visuals live in scenes.
 
 ## Open questions
 - Balance: how fast the jar fills, whether the drop weights are right, and the cooldown length.
-- Sound.

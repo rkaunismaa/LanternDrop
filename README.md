@@ -10,7 +10,7 @@ The second project in a study of the AI-assisted game development workflow; see 
 godot --path game
 ```
 
-Move the mouse (or press Left/Right or A/D) to aim, then click (or press Space) to drop.
+Move the mouse (or press Left/Right or A/D) to aim, then click (or press Space) to drop. Press M to mute the sound.
 
 ## Develop
 

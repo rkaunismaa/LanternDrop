@@ -6,6 +6,8 @@ extends RigidBody2D
 var kind := 1
 var age := 0.0  ## seconds since this lantern appeared (DangerWatch ignores fresh drops)
 var merging := false  ## already promised to a merge this moment
+var last_land := -10.0  ## age at the last landing sound, so one bump isn't heard many times
+var speed_before_step := 0.0  ## touch signals arrive after the collision is resolved, so impact speed is read from here
 
 var _visual: Node2D
 
@@ -46,6 +48,7 @@ func setup(p_kind: int) -> void:
 
 func _physics_process(delta: float) -> void:
 	age += delta
+	speed_before_step = linear_velocity.length()
 
 
 ## A quick swell when a merge creates this lantern.
