@@ -42,3 +42,6 @@ A running, step-by-step record of everything done in the Claude Code terminal se
 
 ### 5. "i created https://github.com/rkaunismaa/LanternDrop.git"
 - Checked the repo was empty, added it as `origin` using the SSH URL (as with Crossroads Inn), and pushed `main`.
+
+### 6. "what is the objective of the game?"
+- The agent explained the goal: score as many points as you can before the jar overflows, by merging lanterns into bigger kinds, aiming for the Sun and beating your best score.
