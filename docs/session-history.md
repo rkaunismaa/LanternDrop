@@ -32,3 +32,10 @@ A running, step-by-step record of everything done in the Claude Code terminal se
   - Wrote a failing test (dropping at both walls). It reproduced the bug: the lantern stuck at y=196.6.
   - Fixed it: the glass walls are now frictionless, and aiming keeps a 2 px gap.
   - The same replay then ran 80 drops with no false loss (the pile reached y=282 against a line at 300). 24/24 passing.
+
+### 4. Painted backdrop
+- Copied the ComfyUI tools from Crossroads Inn (6 tests passing) and added `tools/comfyui/assets.json` with a portrait night backdrop. Started ComfyUI on the RTX 4090.
+- The first image (seed 3001) was lovely, but its large lanterns floating in the sky would compete with the real ones. Regenerated with no lanterns or moon (seeds 3002 and 3003). The agent picked seed 3003, which has a darker, emptier top sky behind the dropper and score. `assets.json` and `provenance.json` reproduce it exactly.
+- Wired it in test-first (2 tests): a `Backdrop` sprite covers the screen and is dimmed slightly, and the drawn starry sky shows if the painting is missing. 26/26 passing.
+- A screenshot shows the painted lake and mountains behind the jar, with the lanterns still the brightest things on screen.
+- Stopped ComfyUI. Updated `docs/design.md`, added `README.md`, and updated the AI log.

@@ -1,0 +1,15 @@
+{
+  "backdrop": {
+    "cfg": 6.5,
+    "checkpoint": "sd_xl_base_1.0.safetensors",
+    "generated": "2026-10-26",
+    "height": 1216,
+    "id": "backdrop",
+    "negative": "text, watermark, signature, logo, frame border, people, person, jar, bottle, glass, bright daylight, blurry, low quality, photo, 3d render, anime, white edges, unfinished edges, lanterns, lantern, balloons, hanging lights, moon",
+    "prompt": "tall view of a quiet night sky over a still lake, distant mountains silhouetted low on the horizon, soft stars, a faint warm glow on the horizon, mostly dark empty sky, full bleed painting edge to edge, painterly digital illustration, deep blue and violet night, soft glow, atmospheric, dark and calm, detailed",
+    "seed": 3003,
+    "steps": 30,
+    "tool": "ComfyUI",
+    "width": 832
+  }
+}

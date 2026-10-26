@@ -113,3 +113,20 @@ func test_lantern_dropped_against_a_wall_still_falls() -> void:
 		var l: Lantern = main.drop_at(edge)
 		await wait_seconds(1.2)
 		assert_gt(l.position.y, main.DANGER_Y + 100, "a lantern at the %s wall must fall" % ("left" if edge < 0 else "right"))
+
+
+# --- painted backdrop ---
+
+func test_painted_backdrop_is_used() -> void:
+	var bg: Sprite2D = main.get_node("%Backdrop")
+	assert_true(bg.visible)
+	assert_eq(bg.texture.resource_path, "res://art/backdrop.png")
+	var size: Vector2 = bg.texture.get_size() * bg.scale
+	assert_gte(size.x, 720.0, "the painting covers the screen width")
+	assert_gte(size.y, 1080.0, "the painting covers the screen height")
+
+
+func test_missing_art_falls_back_to_the_drawn_sky() -> void:
+	main.art_dir = "res://no_art/"
+	main.apply_art()
+	assert_false(main.get_node("%Backdrop").visible)

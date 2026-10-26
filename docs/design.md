@@ -45,7 +45,7 @@ Drop glowing paper lanterns into a glass jar at night. Two lanterns of the same 
 - A dark night scene with a glass jar. The lanterns are the only bright things on screen.
 - Each kind has its own colour and shape, and gives off soft additive glow.
 - On a merge: a quick pop in scale, a burst of sparks, a small screen shake, and a "+points" pop-up.
-- Art: lanterns are drawn in code at first, then painted art is generated with the local ComfyUI pipeline from Crossroads Inn.
+- Art: the lanterns are drawn in code, which keeps every kind crisp and consistent. The night backdrop (a lake under a starry violet sky) was painted with SDXL on the local ComfyUI (`tools/comfyui/`, recorded in `game/art/provenance.json`). If it's missing, a drawn starry sky shows instead.
 
 ## Tech
 - Godot 4.7 with typed GDScript, and GUT tests run headless (`tools/run-tests.sh`).
