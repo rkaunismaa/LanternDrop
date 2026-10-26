@@ -34,7 +34,7 @@ Drop glowing paper lanterns into a glass jar at night. Two lanterns of the same 
 
 - **Points.** Making a lantern of kind *t* scores t(t+1)/2.
 - **Two Suns.** When two Suns touch, they rise away and score a 100-point bonus.
-- **What you drop.** Only kinds 1–5 are ever dropped, with weights 4, 3, 3, 2, 1. The next lantern is always shown.
+- **What you drop.** Only kinds 1–5 are ever dropped, with weights 2, 3, 3, 3, 3 (tuned; see `docs/balance-log.md`). The next lantern is always shown. All tunable numbers are in `game/data/balance.json`.
 
 ## Rules
 - **Merging.** When two lanterns of the same kind touch, both disappear and one lantern of the next kind appears where they met. One lantern can only merge once per moment.
@@ -63,4 +63,4 @@ Press M, or click "Sound", to mute. The choice is saved.
 - Rules (kinds, spawning, merging, scoring, the danger timer, best score) live in plain scripts under `game/scripts/rules/`. Physics and visuals live in scenes.
 
 ## Open questions
-- Balance: how fast the jar fills, whether the drop weights are right, and the cooldown length.
+- Balance by feel: the simulation's careful bot drops a lantern every second; a real player's pace and skill will differ.

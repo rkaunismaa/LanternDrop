@@ -25,3 +25,11 @@ Short notes on what the agent did, what was fixed by hand, and rough time spent.
 - What went wrong and was fixed by the agent: the landing sound never played. The agent measured instead of guessing: the touch signal fires after the collision is resolved, so the speed read 34 instead of the 686 just before impact. Each lantern now remembers its speed from before the physics step.
 - Limit: the agent can't hear the sounds. It checked they're generated, triggered, audible and unclipped, but the user needs to judge how they sound.
 - Fixed by hand: nothing. Time: about 30 minutes.
+
+## 2026-10-26 - Balance tuning by simulation
+- Agent: the user skipped the questions. The agent moved the tunable numbers into `game/data/balance.json` (test-first), then wrote two bots (careful and random, test-first) and `game/tools/balance_sim.gd`, which runs the real game headless at `--fixed-fps 60`. A full run takes about 3 seconds.
+- Baseline: careful runs lasted about 4 minutes (249 drops) and nobody made a Sun.
+- The agent's own first target was contradictory (short runs *and* frequent Suns). The agent spotted it from the numbers (a Sun needs about 350+ drops), revised the target, and said so.
+- Swept 4 configs, then confirmed the chosen one on 40 fresh-seed runs: weights 2,3,3,3,3 give careful runs of about 171 drops and random runs of 54% of that, with Suns rare.
+- Fixed by the agent: one over-strict bot test (landing *on* its twin off-centre is fine).
+- Fixed by hand: nothing. Time: about 40 minutes.

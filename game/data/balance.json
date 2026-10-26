@@ -1,5 +1,5 @@
 {
-  "weights": [4, 3, 3, 2, 1],
+  "weights": [2, 3, 3, 3, 3],
   "cooldown": 0.45,
   "danger_limit": 2.0,
   "grace": 1.0

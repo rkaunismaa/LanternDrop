@@ -65,3 +65,15 @@ A running, step-by-step record of everything done in the Claude Code terminal se
 
 ### 11. "tune the balancd"
 - The user asked to tune the balance. The agent started a design conversation (brainstorming) to pin down what "balanced" should mean for this game.
+
+### 12. "just do it"
+- The user skipped the questions. The agent's calls: bots play the real game headless and faster than real time; the numbers move to one settings file; and an initial target of careful runs of 80–150 drops, Suns in 5–25% of runs, and a careless player losing sooner.
+- Branch `balance`.
+  - Moved the drop weights, cooldown, danger limit and grace into `game/data/balance.json`, read by the new `Balance` class (6 tests); `Spawner` and `DangerWatch` take their values from it.
+  - Added `SimBots` (landing prediction, a careful bot and a random bot) and run stats in the game (`biggest_kind`, `suns`), with 5 tests. One test was over-strict and was fixed: the bot may land off-centre on its twin.
+  - Added `game/tools/balance_sim.gd`. 49/49 tests passing.
+- Baseline (20 runs each): careful 249 drops (about 4 min), score 2550, biggest Sky, no Suns; random 137 drops.
+- Found the target was self-contradictory: a Sun needs roughly 350+ drops. Revised it to careful runs of 120–200 drops, usually reaching Sky or Moon, Suns 0–10%, and random lasting at most 60% as long and scoring at most 40% as much.
+- Swept 4 configs. The danger timer barely matters; the drop weights do.
+- Chose weights 2,3,3,3,3 with the danger timer kept at 2 s. Confirmed on 40 fresh-seed runs: careful 171 drops (about 2:50), random 92 (54%), random score 30%.
+- Wrote `docs/balance-log.md`, and updated `docs/design.md` and the AI log.

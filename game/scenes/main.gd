@@ -21,6 +21,8 @@ var spawner: Spawner
 var best: BestScore
 var score := 0
 var is_over := false
+var biggest_kind := 0  ## largest lantern kind made this night
+var suns := 0  ## pairs of Suns that rose away this night
 var aim_x := (JAR_LEFT + JAR_RIGHT) / 2.0
 
 var _danger: DangerWatch
@@ -69,6 +71,8 @@ func start(seed: int) -> void:
 	spawner = Spawner.new(seed, balance.weights)
 	best = BestScore.new(best_path)
 	score = 0
+	biggest_kind = 0
+	suns = 0
 	is_over = false
 	_cooldown = 0.0
 	_danger.reset()
@@ -102,6 +106,7 @@ func drop_at(x: float) -> Lantern:
 func spawn_lantern(kind: int, pos: Vector2) -> Lantern:
 	var l := Lantern.new()
 	l.setup(kind)
+	biggest_kind = maxi(biggest_kind, kind)
 	l.position = pos
 	l.body_entered.connect(_on_touch.bind(l))
 	_lanterns.add_child(l)
@@ -172,6 +177,7 @@ func _merge(a: Lantern, b: Lantern) -> void:
 	if r.vanish:
 		_burst(pos, LanternKinds.color(LanternKinds.COUNT), 80)
 		sfx.play("sun")
+		suns += 1
 	else:
 		var n := spawn_lantern(r.kind, pos)
 		n.linear_velocity = vel
