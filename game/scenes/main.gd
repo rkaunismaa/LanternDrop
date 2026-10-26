@@ -1,1 +1,361 @@
-extends Control
+extends Node2D
+## The night scene: sky, glass jar, lanterns, dropper and score. Rules live in scripts/rules/;
+## this script wires physics, input and effects to them.
+
+const JAR_LEFT := 100.0
+const JAR_RIGHT := 620.0
+const JAR_FLOOR := 1000.0
+const JAR_TOP := 300.0
+const DANGER_Y := 300.0  ## a settled lantern whose top is above this line is overflowing
+const DROP_Y := 190.0
+const COOLDOWN := 0.45
+const WALL := 40.0
+const AIM_GAP := 2.0  ## keep drops this far off the glass, so a lantern never starts pressed into a wall
+
+var best_path := "user://best.cfg"
+var spawner: Spawner
+var best: BestScore
+var score := 0
+var is_over := false
+var aim_x := (JAR_LEFT + JAR_RIGHT) / 2.0
+
+var _danger := DangerWatch.new()
+var _cooldown := 0.0
+var _merges: Array = []  ## pairs of lanterns that touched this moment
+var _shake := 0.0
+var _rng := RandomNumberGenerator.new()
+
+var _lanterns: Node2D
+var _dropper: Node2D
+var _danger_line: Node2D
+var _camera: Camera2D
+var _effects: Node2D
+
+
+func _ready() -> void:
+	_build()
+	start(randi())
+
+
+## A fresh night: empty jar, score 0.
+func start(seed: int) -> void:
+	for l in _lanterns.get_children():
+		_lanterns.remove_child(l)
+		l.queue_free()
+	_merges.clear()
+	spawner = Spawner.new(seed)
+	best = BestScore.new(best_path)
+	score = 0
+	is_over = false
+	_cooldown = 0.0
+	_danger.reset()
+	%GameOver.visible = false
+	_refresh_ui()
+
+
+func lanterns() -> Array:
+	return _lanterns.get_children().filter(func(l: Node) -> bool: return l is Lantern and not l.merging)
+
+
+func aim(x: float) -> void:
+	var r := LanternKinds.radius(spawner.peek())
+	aim_x = clampf(x, JAR_LEFT + r + AIM_GAP, JAR_RIGHT - r - AIM_GAP)
+
+
+## Drop the previewed lantern at x. Returns null while cooling down or after the night ends.
+func drop_at(x: float) -> Lantern:
+	if is_over or _cooldown > 0.0:
+		return null
+	aim(x)
+	var l := spawn_lantern(spawner.take(), Vector2(aim_x, DROP_Y))
+	_cooldown = COOLDOWN
+	aim(aim_x)  # the next lantern may be bigger
+	_refresh_ui()
+	return l
+
+
+func spawn_lantern(kind: int, pos: Vector2) -> Lantern:
+	var l := Lantern.new()
+	l.setup(kind)
+	l.position = pos
+	l.body_entered.connect(_on_touch.bind(l))
+	_lanterns.add_child(l)
+	return l
+
+
+func end_night() -> void:
+	is_over = true
+	var new_best := best.submit(score)
+	%GameOverText.text = "The night is over\n\nScore %d\nBest %d%s" % [score, best.best, "\nNew best!" if new_best else ""]
+	%GameOver.visible = true
+	_refresh_ui()
+
+
+func _on_touch(other: Node, l: Lantern) -> void:
+	if other is Lantern and other.kind == l.kind and not l.merging and not other.merging:
+		l.merging = true
+		other.merging = true
+		_merges.append([l, other])
+
+
+func _physics_process(delta: float) -> void:
+	if is_over:
+		return
+	_cooldown = maxf(0.0, _cooldown - delta)
+	for pair: Array in _merges:
+		_merge(pair[0], pair[1])
+	_merges.clear()
+	var above := {}
+	for l: Lantern in lanterns():
+		if l.position.y - LanternKinds.radius(l.kind) < DANGER_Y:
+			above[l.get_instance_id()] = l.age
+	_danger.update(delta, above)
+	if _danger.is_lost():
+		end_night()
+
+
+func _merge(a: Lantern, b: Lantern) -> void:
+	var r := MergeRules.result(a.kind, b.kind)
+	var pos := (a.position + b.position) / 2.0
+	var vel := (a.linear_velocity + b.linear_velocity) / 2.0
+	var color := LanternKinds.color(a.kind)
+	for l in [a, b]:
+		_lanterns.remove_child(l)
+		l.queue_free()
+	score += r.points
+	if r.vanish:
+		_burst(pos, LanternKinds.color(LanternKinds.COUNT), 80)
+	else:
+		var n := spawn_lantern(r.kind, pos)
+		n.linear_velocity = vel
+		n.pop()
+		color = LanternKinds.color(r.kind)
+		_burst(pos, color, 18 + r.kind * 3)
+	_float_text(pos, "+%d" % r.points, color)
+	_shake = minf(_shake + 3.0 + r.kind, 16.0)
+	_refresh_ui()
+
+
+# --- input -------------------------------------------------------------------------------------
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		aim(get_global_mouse_position().x)
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		aim(get_global_mouse_position().x)
+		drop_at(aim_x)
+	elif event.is_action_pressed("ui_accept"):
+		drop_at(aim_x)
+
+
+func _process(delta: float) -> void:
+	var move := Input.get_axis("ui_left", "ui_right")
+	if Input.is_physical_key_pressed(KEY_A):
+		move -= 1.0
+	if Input.is_physical_key_pressed(KEY_D):
+		move += 1.0
+	if move != 0.0:
+		aim(aim_x + move * 600.0 * delta)
+	_shake = lerpf(_shake, 0.0, minf(1.0, delta * 8.0))
+	_camera.offset = Vector2(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1)) * _shake
+	_dropper.queue_redraw()
+	_danger_line.queue_redraw()
+
+
+# --- effects -----------------------------------------------------------------------------------
+
+func _burst(pos: Vector2, color: Color, amount: int) -> void:
+	var p := CPUParticles2D.new()
+	p.position = pos
+	p.one_shot = true
+	p.amount = amount
+	p.lifetime = 0.8
+	p.explosiveness = 1.0
+	p.spread = 180.0
+	p.initial_velocity_min = 90.0
+	p.initial_velocity_max = 280.0
+	p.gravity = Vector2(0, 260)
+	p.scale_amount_min = 2.0
+	p.scale_amount_max = 5.0
+	p.color = color.lightened(0.3)
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	p.material = add
+	_effects.add_child(p)
+	p.emitting = true
+	get_tree().create_timer(1.2).timeout.connect(p.queue_free)
+
+
+func _float_text(pos: Vector2, text: String, color: Color) -> void:
+	var l := Label.new()
+	l.text = text
+	l.position = pos + Vector2(-30, -20)
+	l.add_theme_font_size_override("font_size", 34)
+	l.add_theme_color_override("font_color", color.lightened(0.4))
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	l.add_theme_constant_override("outline_size", 6)
+	_effects.add_child(l)
+	var t := create_tween()
+	t.set_parallel(true)
+	t.tween_property(l, "position:y", l.position.y - 70, 0.9)
+	t.tween_property(l, "modulate:a", 0.0, 0.9).set_delay(0.3)
+	t.chain().tween_callback(l.queue_free)
+
+
+func _refresh_ui() -> void:
+	%Score.text = str(score)
+	%Best.text = "Best %d" % (best.best if best != null else 0)
+	if spawner != null:
+		%Next.text = "Next: %s" % LanternKinds.name_of(spawner.peek())
+
+
+# --- building the scene -----------------------------------------------------------------------
+
+func _build() -> void:
+	_camera = Camera2D.new()
+	_camera.position = Vector2(360, 540)
+	add_child(_camera)
+
+	var sky := Node2D.new()
+	sky.draw.connect(_draw_sky.bind(sky))
+	add_child(sky)
+
+	var jar_back := Node2D.new()
+	jar_back.draw.connect(_draw_jar_back.bind(jar_back))
+	add_child(jar_back)
+
+	var walls := StaticBody2D.new()
+	var glass := PhysicsMaterial.new()
+	glass.friction = 0.0  # slippery glass: lanterns slide down the walls instead of sticking to them
+	walls.physics_material_override = glass
+	for rect: Rect2 in [Rect2(JAR_LEFT - WALL, JAR_TOP - 200, WALL, JAR_FLOOR - JAR_TOP + 200 + WALL),
+			Rect2(JAR_RIGHT, JAR_TOP - 200, WALL, JAR_FLOOR - JAR_TOP + 200 + WALL),
+			Rect2(JAR_LEFT - WALL, JAR_FLOOR, JAR_RIGHT - JAR_LEFT + 2 * WALL, WALL)]:
+		var shape := CollisionShape2D.new()
+		var box := RectangleShape2D.new()
+		box.size = rect.size
+		shape.shape = box
+		shape.position = rect.get_center()
+		walls.add_child(shape)
+	add_child(walls)
+
+	_lanterns = Node2D.new()
+	add_child(_lanterns)
+
+	var jar_front := Node2D.new()
+	jar_front.draw.connect(_draw_jar_front.bind(jar_front))
+	add_child(jar_front)
+
+	_danger_line = Node2D.new()
+	_danger_line.draw.connect(_draw_danger.bind(_danger_line))
+	add_child(_danger_line)
+
+	_dropper = Node2D.new()
+	_dropper.draw.connect(_draw_dropper.bind(_dropper))
+	add_child(_dropper)
+
+	_effects = Node2D.new()
+	add_child(_effects)
+
+	var ui := CanvasLayer.new()
+	add_child(ui)
+	ui.add_child(_ui_label("Score", Vector2(40, 40), 64))
+	ui.add_child(_ui_label("Best", Vector2(480, 56), 28))
+	ui.add_child(_ui_label("Next", Vector2(40, 120), 24))
+
+	var over := PanelContainer.new()
+	over.name = "GameOver"
+	over.unique_name_in_owner = true
+	over.position = Vector2(150, 420)
+	over.custom_minimum_size = Vector2(420, 260)
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.04, 0.03, 0.08, 0.88)
+	box.set_corner_radius_all(16)
+	box.set_border_width_all(2)
+	box.border_color = Color("ffc21a")
+	box.set_content_margin_all(24)
+	over.add_theme_stylebox_override("panel", box)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 18)
+	var text := _ui_label("GameOverText", Vector2.ZERO, 30)
+	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(text)
+	var again := Button.new()
+	again.name = "PlayAgain"
+	again.unique_name_in_owner = true
+	again.text = "Play again"
+	again.add_theme_font_size_override("font_size", 28)
+	again.pressed.connect(func() -> void: start(randi()))
+	column.add_child(again)
+	over.add_child(column)
+	ui.add_child(over)
+	for n: Node in [ui, over, column, text, again]:
+		n.owner = self
+	for l in ui.get_children():
+		l.owner = self
+
+
+func _ui_label(unique: String, pos: Vector2, size: int) -> Label:
+	var l := Label.new()
+	l.name = unique
+	l.unique_name_in_owner = true
+	l.position = pos
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", Color("ffe9b8"))
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))
+	l.add_theme_constant_override("outline_size", 6)
+	return l
+
+
+func _draw_sky(ci: Node2D) -> void:
+	ci.draw_polygon(PackedVector2Array([Vector2(-60, -60), Vector2(780, -60), Vector2(780, 1140), Vector2(-60, 1140)]),
+		PackedColorArray([Color("0a0b24"), Color("0a0b24"), Color("1a1030"), Color("1a1030")]))
+	var stars := RandomNumberGenerator.new()
+	stars.seed = 11
+	for i in 140:
+		var p := Vector2(stars.randf_range(0, 720), stars.randf_range(0, 900))
+		ci.draw_circle(p, stars.randf_range(0.6, 2.0), Color(1, 0.95, 0.85, stars.randf_range(0.15, 0.7)))
+
+
+func _draw_jar_back(ci: Node2D) -> void:
+	var inside := Rect2(JAR_LEFT, JAR_TOP - 40, JAR_RIGHT - JAR_LEFT, JAR_FLOOR - JAR_TOP + 40)
+	ci.draw_rect(inside, Color(0.55, 0.7, 0.9, 0.06))
+
+
+func _draw_jar_front(ci: Node2D) -> void:
+	var glass := Color(0.75, 0.88, 1.0, 0.35)
+	var top := JAR_TOP - 40
+	ci.draw_line(Vector2(JAR_LEFT, top), Vector2(JAR_LEFT, JAR_FLOOR - 24), glass, 6)
+	ci.draw_line(Vector2(JAR_RIGHT, top), Vector2(JAR_RIGHT, JAR_FLOOR - 24), glass, 6)
+	ci.draw_arc(Vector2(JAR_LEFT + 24, JAR_FLOOR - 24), 24, PI / 2, PI, 12, glass, 6)
+	ci.draw_arc(Vector2(JAR_RIGHT - 24, JAR_FLOOR - 24), 24, 0, PI / 2, 12, glass, 6)
+	ci.draw_line(Vector2(JAR_LEFT + 24, JAR_FLOOR), Vector2(JAR_RIGHT - 24, JAR_FLOOR), glass, 6)
+	ci.draw_line(Vector2(JAR_LEFT - 12, top), Vector2(JAR_LEFT + 10, top), glass, 8)
+	ci.draw_line(Vector2(JAR_RIGHT - 10, top), Vector2(JAR_RIGHT + 12, top), glass, 8)
+	ci.draw_line(Vector2(JAR_LEFT + 18, top + 30), Vector2(JAR_LEFT + 18, JAR_FLOOR - 60), Color(1, 1, 1, 0.12), 10)
+
+
+func _draw_danger(ci: Node2D) -> void:
+	var level := _danger.level()
+	var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 90.0) if level > 0.0 else 0.0
+	var color := Color(1.0, 0.25, 0.2, 0.12 + 0.6 * level * pulse)
+	var x := JAR_LEFT
+	while x < JAR_RIGHT:
+		ci.draw_line(Vector2(x, DANGER_Y), Vector2(minf(x + 14, JAR_RIGHT), DANGER_Y), color, 3)
+		x += 24
+
+
+func _draw_dropper(ci: Node2D) -> void:
+	if spawner == null or is_over:
+		return
+	var ready := _cooldown <= 0.0
+	var guide := Color(1, 0.95, 0.8, 0.18 if ready else 0.06)
+	var y := DROP_Y + LanternKinds.radius(spawner.peek())
+	while y < JAR_FLOOR:
+		ci.draw_line(Vector2(aim_x, y), Vector2(aim_x, y + 10), guide, 2)
+		y += 22
+	if ready:
+		var r := LanternKinds.radius(spawner.peek())
+		ci.draw_texture_rect(Lantern.glow_texture(), Rect2(Vector2(aim_x, DROP_Y) - Vector2.ONE * r * 2.1, Vector2.ONE * r * 4.2),
+			false, Color(LanternKinds.color(spawner.peek()), 0.35))
+		Lantern.draw_lantern(ci, spawner.peek(), Vector2(aim_x, DROP_Y), 0.95)

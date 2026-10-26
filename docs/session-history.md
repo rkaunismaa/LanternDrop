@@ -20,3 +20,15 @@ A running, step-by-step record of everything done in the Claude Code terminal se
 
 ### 2. Rules, test-first
 - Wrote 13 failing GUT tests, then implemented `LanternKinds` (11 kinds: radius, colour, name, points), `MergeRules` (same kinds merge; two Suns vanish for 100), `Spawner` (kinds 1-5 weighted 4,3,3,2,1, seeded, with a next-lantern preview), `DangerWatch` (2 s above the line, ignoring lanterns under 1 s old, plus a 0-1 warning level) and `BestScore` (saved in `user://`). 13/13 passing.
+
+### 3. The playable game
+- Wrote 10 failing scene tests (dropping, cooldown, aim limits, merging, no double merges, two Suns, overflow, restart, best score), then built:
+  - `Lantern`: a physics circle, upright, drawn as a paper lantern with ribs, caps, a tassel and additive glow; it swells briefly when made by a merge;
+  - `main.gd`: a starry night sky, a glass jar with walls, the dropper with a guide line, merges handled once per pair, a spark burst, screen shake and "+points" text, a pulsing danger line, score, best score and a game-over panel with Play again.
+- One test was wrong: two Suns don't fit side by side in the jar (552 px in a 520 px jar), and it checked the score a frame early. Fixed the test.
+- 23/23 passing, and the physics tests passed 3 runs in a row.
+- The agent watched the game in screenshots of a scripted 30-drop run. It looks good, but the night ended with the jar only about a third full.
+- Traced the cause instead of guessing. A lantern dropped flush against the glass (x = wall − radius) was pressed into the wall and held there by wall friction, sitting above the danger line until the night ended.
+  - Wrote a failing test (dropping at both walls). It reproduced the bug: the lantern stuck at y=196.6.
+  - Fixed it: the glass walls are now frictionless, and aiming keeps a 2 px gap.
+  - The same replay then ran 80 drops with no false loss (the pile reached y=282 against a line at 300). 24/24 passing.
