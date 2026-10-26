@@ -56,3 +56,6 @@ A running, step-by-step record of everything done in the Claude Code terminal se
 - Implemented `game/scripts/audio/sound_bank.gd` (all sounds synthesized as 16-bit WAVs in memory), `game/scenes/sfx.gd` (8 voices, mute saved in `user://settings.cfg`), the hooks in `main.gd`, and a "Sound: on/off (M)" button that never takes keyboard focus.
 - The landing test failed. A debug run measured the lantern's speed at the touch signal (34) against just before impact (686): the signal fires after the collision is resolved. Fixed by having each lantern store its speed before the physics step. 38/38 passing, and stable on repeat runs.
 - Updated `docs/design.md` (a sound section), `README.md` (the M key) and the AI log.
+
+### 9. "1" (merge and push)
+- Merged `sound` into `main` (38/38 passing on `main`), deleted the branch, and pushed `main` to GitHub.
