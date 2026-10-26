@@ -17,3 +17,6 @@ A running, step-by-step record of everything done in the Claude Code terminal se
   - `project.godot`: portrait 720x1080 shown in a 540x810 window, physics at 120 ticks a second, and a dark night clear colour;
   - GUT and `tools/run-tests.sh` copied from Crossroads Inn (without the LLM switch);
   - `.gitignore`, `CLAUDE.md`, and `docs/design.md` v0.1 (11 lantern kinds, merging, scoring, the danger line, look and feel).
+
+### 2. Rules, test-first
+- Wrote 13 failing GUT tests, then implemented `LanternKinds` (11 kinds: radius, colour, name, points), `MergeRules` (same kinds merge; two Suns vanish for 100), `Spawner` (kinds 1-5 weighted 4,3,3,2,1, seeded, with a next-lantern preview), `DangerWatch` (2 s above the line, ignoring lanterns under 1 s old, plus a 0-1 warning level) and `BestScore` (saved in `user://`). 13/13 passing.
