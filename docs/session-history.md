@@ -39,3 +39,6 @@ A running, step-by-step record of everything done in the Claude Code terminal se
 - Wired it in test-first (2 tests): a `Backdrop` sprite covers the screen and is dimmed slightly, and the drawn starry sky shows if the painting is missing. 26/26 passing.
 - A screenshot shows the painted lake and mountains behind the jar, with the lanterns still the brightest things on screen.
 - Stopped ComfyUI. Updated `docs/design.md`, added `README.md`, and updated the AI log.
+
+### 5. "i created https://github.com/rkaunismaa/LanternDrop.git"
+- Checked the repo was empty, added it as `origin` using the SSH URL (as with Crossroads Inn), and pushed `main`.
